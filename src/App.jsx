@@ -33,6 +33,9 @@ export default function App() {
   const [visionPrimaryModel, setVisionPrimaryModel] = useState(null);
   const [visionSecondaryModel, setVisionSecondaryModel] = useState(null);
 
+  // ── Output Platform Filter ──
+  const [outputPlatforms, setOutputPlatforms] = useState(['tiktok']); // default: chỉ TikTok
+
   // ── UI State ──
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState('');
@@ -130,6 +133,7 @@ export default function App() {
         visionMode,
         visionPrimaryModel,
         visionSecondaryModel,
+        outputPlatforms,
       });
 
       if (data.status === 'success') {
@@ -213,6 +217,8 @@ export default function App() {
             setVisionPrimaryModel={setVisionPrimaryModel}
             visionSecondaryModel={visionSecondaryModel}
             setVisionSecondaryModel={setVisionSecondaryModel}
+            outputPlatforms={outputPlatforms}
+            setOutputPlatforms={setOutputPlatforms}
             loading={loading}
             onSubmit={handleSearch}
           />

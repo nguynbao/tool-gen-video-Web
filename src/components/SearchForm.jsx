@@ -54,6 +54,9 @@ export default function SearchForm({
   setVisionPrimaryModel,
   visionSecondaryModel,
   setVisionSecondaryModel,
+  // Output platform filter
+  outputPlatforms,
+  setOutputPlatforms,
   loading,
   onSubmit
 }) {

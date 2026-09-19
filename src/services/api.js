@@ -44,6 +44,8 @@ export async function searchVideos({
   visionMode = 'balanced',
   visionPrimaryModel = null,
   visionSecondaryModel = null,
+  // Output platform filter
+  outputPlatforms = [],
 }) {
   const validUrls = videoUrls.filter((u) => u && u.trim());
   const res = await axios.post(
@@ -63,6 +65,8 @@ export async function searchVideos({
       vision_mode: visionMode || 'balanced',
       vision_primary_model: visionPrimaryModel || null,
       vision_secondary_model: visionSecondaryModel || null,
+      // Platform filter
+      output_platforms: outputPlatforms || [],
     },
     { timeout: 600000 } // 10 phút timeout cho AI pipeline
   );
