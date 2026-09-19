@@ -40,6 +40,10 @@ export async function searchVideos({
   aiProvider = 'gemini',
   geminiApiKey = '',
   geminiModel = 'gemini-3.6-flash',
+  // Vision Model params
+  visionMode = 'balanced',
+  visionPrimaryModel = null,
+  visionSecondaryModel = null,
 }) {
   const validUrls = videoUrls.filter((u) => u && u.trim());
   const res = await axios.post(
@@ -55,11 +59,16 @@ export async function searchVideos({
       ai_provider: aiProvider || 'gemini',
       gemini_api_key: (geminiApiKey || '').trim(),
       gemini_model: geminiModel || 'gemini-3.6-flash',
+      // Vision scoring
+      vision_mode: visionMode || 'balanced',
+      vision_primary_model: visionPrimaryModel || null,
+      vision_secondary_model: visionSecondaryModel || null,
     },
     { timeout: 600000 } // 10 phút timeout cho AI pipeline
   );
   return res.data;
 }
+
 
 /**
  * Kiểm tra kết nối server backend.
@@ -74,6 +83,26 @@ export async function checkHealth() {
  */
 export async function getAiModels() {
   const res = await axios.get(`${API_BASE}/api/v1/ai/models`, { timeout: 5000 });
+  return res.data;
+}
+
+/**
+ * Lấy danh sách Vision (Computer Vision) models + trạng thái tải.
+ */
+export async function getVisionModels() {
+  const res = await axios.get(`${API_BASE}/api/v1/vision/models`, { timeout: 5000 });
+  return res.data;
+}
+
+/**
+ * Tải một Vision model về RAM (pre-download).
+ */
+export async function downloadVisionModel(modelId) {
+  const res = await axios.post(
+    `${API_BASE}/api/v1/vision/download`,
+    { model_id: modelId },
+    { timeout: 300000 } // 5 phút cho download model lớn
+  );
   return res.data;
 }
 

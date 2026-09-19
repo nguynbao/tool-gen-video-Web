@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import { extractAsinFromUrl } from '../services/api';
+import VisionModelSelector from './VisionModelSelector';
 
 const GEMINI_KEY_STORAGE = 'shorts_hunter_gemini_api_key';
 const GEMINI_MODEL_STORAGE = 'shorts_hunter_gemini_model';
@@ -46,6 +47,13 @@ export default function SearchForm({
   setGeminiApiKey,
   geminiModel,
   setGeminiModel,
+  // Vision Model props
+  visionMode,
+  setVisionMode,
+  visionPrimaryModel,
+  setVisionPrimaryModel,
+  visionSecondaryModel,
+  setVisionSecondaryModel,
   loading,
   onSubmit
 }) {
@@ -229,6 +237,18 @@ export default function SearchForm({
           </p>
         )}
       </div>
+
+      {/* ═════════════════════════════════════════════════════════════════════ */}
+      {/*  SECTION 1B: VISION MODEL (COMPUTER VISION SCORING)                   */}
+      {/* ═════════════════════════════════════════════════════════════════════ */}
+      <VisionModelSelector
+        visionMode={visionMode}
+        setVisionMode={setVisionMode}
+        visionPrimaryModel={visionPrimaryModel}
+        setVisionPrimaryModel={setVisionPrimaryModel}
+        visionSecondaryModel={visionSecondaryModel}
+        setVisionSecondaryModel={setVisionSecondaryModel}
+      />
 
       {/* ═════════════════════════════════════════════════════════════════════ */}
       {/*  SECTION 2: LINK VIDEO MẪU & LINK SẢN PHẨM GỐC (CÂN XỨNG HOÀN HẢO)   */}

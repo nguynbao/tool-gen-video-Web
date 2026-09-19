@@ -28,6 +28,11 @@ export default function App() {
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [geminiModel, setGeminiModel] = useState('gemini-3.6-flash');
 
+  // ── Vision Model State (Computer Vision Scoring) ──
+  const [visionMode, setVisionMode] = useState('balanced');
+  const [visionPrimaryModel, setVisionPrimaryModel] = useState(null);
+  const [visionSecondaryModel, setVisionSecondaryModel] = useState(null);
+
   // ── UI State ──
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState('');
@@ -122,6 +127,9 @@ export default function App() {
         aiProvider,
         geminiApiKey,
         geminiModel,
+        visionMode,
+        visionPrimaryModel,
+        visionSecondaryModel,
       });
 
       if (data.status === 'success') {
@@ -199,6 +207,12 @@ export default function App() {
             setGeminiApiKey={setGeminiApiKey}
             geminiModel={geminiModel}
             setGeminiModel={setGeminiModel}
+            visionMode={visionMode}
+            setVisionMode={setVisionMode}
+            visionPrimaryModel={visionPrimaryModel}
+            setVisionPrimaryModel={setVisionPrimaryModel}
+            visionSecondaryModel={visionSecondaryModel}
+            setVisionSecondaryModel={setVisionSecondaryModel}
             loading={loading}
             onSubmit={handleSearch}
           />
