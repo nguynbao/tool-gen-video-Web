@@ -81,6 +81,21 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
 
   const thumbnail = getThumbnail();
 
+  // Làm sạch title: strip duration prefix + trailing metadata từ Bing scraping
+  const cleanTitle = (raw) => {
+    if (!raw) return '';
+    let t = raw;
+    // Strip leading duration "0:09", "2:30", "1:13:45" stuck to text
+    t = t.replace(/^\d{1,2}:\d{2}(?::\d{2})?\s*/, '');
+    // Strip trailing view counts + dates from Bing: "34.4K views3 months agoTikTok..."
+    t = t.replace(/\d+\.?\d*[KkMm]?\s*views?\s*\d+\s*(?:months?|days?|years?|hours?|weeks?)\s*ago\s*TikTok.*/i, '');
+    // Strip trailing "TikTok" or "TikTokmanueklear..."
+    t = t.replace(/\s*TikTok\w*$/i, '');
+    return t.trim() || raw;
+  };
+
+  const displayTitle = cleanTitle(video.title);
+
   // Metadata formatting
   const likes = formatCount(video.like_count);
   const comments = formatCount(video.comment_count);
@@ -177,7 +192,7 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
             {/* Title Snippet */}
             <div className="pb-8 w-full z-10">
               <p className="text-[11px] text-slate-300 font-medium line-clamp-3 leading-relaxed px-1">
-                {video.title}
+                {displayTitle}
               </p>
             </div>
           </div>
@@ -289,39 +304,39 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
         )}
 
         {/* Title */}
-        <h3 className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed mb-2 group-hover:text-cyan-300 transition-colors" title={video.title}>
-          {video.title}
+        <h3 className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed mb-2 group-hover:text-cyan-300 transition-colors" title={displayTitle}>
+          {displayTitle}
         </h3>
 
         {/* Engagement Stats Bar */}
         {hasStats && (
-          <div className="flex items-center gap-3 mb-2.5 py-1.5 px-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+          <div className="flex items-center flex-wrap gap-x-2.5 gap-y-1 mb-2.5 py-1.5 px-2 rounded-lg bg-slate-800/60 border border-slate-700/50 overflow-hidden">
             {views !== null && (
-              <div className="flex items-center gap-1" title={`${video.view_count?.toLocaleString()} lượt xem`}>
+              <div className="flex items-center gap-1 shrink-0" title={`${video.view_count?.toLocaleString()} lượt xem`}>
                 <Eye className="w-3 h-3 text-slate-400" />
                 <span className="text-[10px] font-semibold text-slate-300">{views}</span>
               </div>
             )}
             {likes !== null && (
-              <div className="flex items-center gap-1" title={`${video.like_count?.toLocaleString()} lượt thích`}>
+              <div className="flex items-center gap-1 shrink-0" title={`${video.like_count?.toLocaleString()} lượt thích`}>
                 <Heart className="w-3 h-3 text-rose-400" />
                 <span className="text-[10px] font-semibold text-slate-300">{likes}</span>
               </div>
             )}
             {comments !== null && (
-              <div className="flex items-center gap-1" title={`${video.comment_count?.toLocaleString()} bình luận`}>
+              <div className="flex items-center gap-1 shrink-0" title={`${video.comment_count?.toLocaleString()} bình luận`}>
                 <MessageCircle className="w-3 h-3 text-sky-400" />
                 <span className="text-[10px] font-semibold text-slate-300">{comments}</span>
               </div>
             )}
             {shares !== null && (
-              <div className="flex items-center gap-1" title={`${video.share_count?.toLocaleString()} chia sẻ`}>
+              <div className="flex items-center gap-1 shrink-0" title={`${video.share_count?.toLocaleString()} chia sẻ`}>
                 <Share2 className="w-3 h-3 text-emerald-400" />
                 <span className="text-[10px] font-semibold text-slate-300">{shares}</span>
               </div>
             )}
             {saves !== null && (
-              <div className="flex items-center gap-1" title={`${video.save_count?.toLocaleString()} lượt lưu`}>
+              <div className="flex items-center gap-1 shrink-0" title={`${video.save_count?.toLocaleString()} lượt lưu`}>
                 <Bookmark className="w-3 h-3 text-amber-400" />
                 <span className="text-[10px] font-semibold text-slate-300">{saves}</span>
               </div>

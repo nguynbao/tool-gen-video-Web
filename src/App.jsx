@@ -39,6 +39,7 @@ export default function App() {
   // ── Metadata Source (Page Scrape hoặc Apify) ──
   const [metadataSource, setMetadataSource] = useState('page_scrape'); // 'page_scrape' | 'apify'
   const [apifyToken, setApifyToken] = useState('');
+  const [apifyActorId, setApifyActorId] = useState('');
 
   // ── UI State ──
   const [loading, setLoading] = useState(false);
@@ -140,6 +141,7 @@ export default function App() {
         outputPlatforms,
         metadataSource,
         apifyToken,
+        apifyActorId,
       });
 
       if (data.status === 'success') {
@@ -229,6 +231,8 @@ export default function App() {
             setMetadataSource={setMetadataSource}
             apifyToken={apifyToken}
             setApifyToken={setApifyToken}
+            apifyActorId={apifyActorId}
+            setApifyActorId={setApifyActorId}
             loading={loading}
             onSubmit={handleSearch}
           />

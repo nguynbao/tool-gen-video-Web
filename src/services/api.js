@@ -49,6 +49,7 @@ export async function searchVideos({
   // Metadata source
   metadataSource = 'page_scrape',
   apifyToken = '',
+  apifyActorId = '',
 }) {
   const validUrls = videoUrls.filter((u) => u && u.trim());
   const res = await axios.post(
@@ -73,6 +74,7 @@ export async function searchVideos({
       // Metadata
       metadata_source: metadataSource || 'page_scrape',
       apify_token: (apifyToken || '').trim(),
+      apify_actor_id: (apifyActorId || '').trim(),
     },
     { timeout: 600000 } // 10 phút timeout cho AI pipeline
   );
