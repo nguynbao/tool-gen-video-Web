@@ -46,6 +46,9 @@ export async function searchVideos({
   visionSecondaryModel = null,
   // Output platform filter
   outputPlatforms = [],
+  // Metadata source
+  metadataSource = 'page_scrape',
+  apifyToken = '',
 }) {
   const validUrls = videoUrls.filter((u) => u && u.trim());
   const res = await axios.post(
@@ -67,6 +70,9 @@ export async function searchVideos({
       vision_secondary_model: visionSecondaryModel || null,
       // Platform filter
       output_platforms: outputPlatforms || [],
+      // Metadata
+      metadata_source: metadataSource || 'page_scrape',
+      apify_token: (apifyToken || '').trim(),
     },
     { timeout: 600000 } // 10 phút timeout cho AI pipeline
   );

@@ -57,6 +57,11 @@ export default function SearchForm({
   // Output platform filter
   outputPlatforms,
   setOutputPlatforms,
+  // Metadata source
+  metadataSource,
+  setMetadataSource,
+  apifyToken,
+  setApifyToken,
   loading,
   onSubmit
 }) {
@@ -489,6 +494,66 @@ export default function SearchForm({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ── Metadata Source ── */}
+        <div className="space-y-2 pt-3 border-t border-slate-800/60">
+          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            📊 Nguồn Metadata Video
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMetadataSource('page_scrape')}
+              className={`flex-1 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${
+                metadataSource === 'page_scrape'
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-md shadow-cyan-500/10'
+                  : 'bg-slate-800/90 text-slate-400 border-slate-700/80 hover:text-slate-200 hover:border-slate-600'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <span>🌐 Page Scrape</span>
+                <span className="text-[9px] font-normal opacity-70">Miễn phí · Trực tiếp</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMetadataSource('apify')}
+              className={`flex-1 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border ${
+                metadataSource === 'apify'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/10'
+                  : 'bg-slate-800/90 text-slate-400 border-slate-700/80 hover:text-slate-200 hover:border-slate-600'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <span>⚡ Apify API</span>
+                <span className="text-[9px] font-normal opacity-70">Ổn định · Cần token</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Apify Token Input */}
+          {metadataSource === 'apify' && (
+            <div className="mt-2">
+              <label className="text-[10px] font-semibold text-slate-500 mb-1 block">
+                Apify API Token
+              </label>
+              <input
+                type="password"
+                value={apifyToken}
+                onChange={(e) => setApifyToken(e.target.value)}
+                placeholder="apify_api_xxxxxxxxxxxxxxx"
+                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 outline-none transition-all"
+              />
+              <p className="text-[9px] text-slate-600 mt-1">
+                Lấy token tại{' '}
+                <a href="https://console.apify.com/account/integrations" target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:underline">
+                  console.apify.com
+                </a>
+                {' '}· Free $5/tháng
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Submit Button */}

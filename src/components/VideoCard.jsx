@@ -1,6 +1,54 @@
 import React, { useState } from 'react';
-import { ExternalLink, Download, Copy, Check, Eye, Brain, BarChart3, Video as VideoIcon, Play } from 'lucide-react';
+import { ExternalLink, Download, Copy, Check, Brain, BarChart3, Play, Heart, MessageCircle, Share2, Eye, Bookmark, Clock } from 'lucide-react';
 import { downloadVideo } from '../services/api';
+
+// Format số lớn: 1234 → "1.2K", 1234567 → "1.2M"
+function formatCount(num) {
+  if (num == null || num === undefined) return null;
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  return String(num);
+}
+
+// Format duration: 65 → "1:05", 9 → "0:09"
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return null;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// Format ngày: "2026-06-06" → "06/06/2026"
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr + 'T00:00:00Z');
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return null;
+  }
+}
+
+// Tính "thời gian trước": "3 tháng trước", "2 ngày trước"
+function timeAgo(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr + 'T00:00:00Z');
+    if (isNaN(d.getTime())) return null;
+    const now = new Date();
+    const diffMs = now - d;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return null;
+    if (diffDays === 0) return 'Hôm nay';
+    if (diffDays === 1) return 'Hôm qua';
+    if (diffDays < 30) return `${diffDays} ngày trước`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} tháng trước`;
+    return `${Math.floor(diffDays / 365)} năm trước`;
+  } catch {
+    return null;
+  }
+}
 
 export default function VideoCard({ video, isSelected = false, onToggleSelect }) {
   const [downloading, setDownloading] = useState(false);
@@ -8,31 +56,40 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Trích xuất username tác giả từ TikTok URL nếu có
-  const getTikTokAuthor = (url) => {
+  // Trích xuất username tác giả từ TikTok URL hoặc metadata
+  const getAuthorDisplay = () => {
+    if (video.author_id) return `@${video.author_id}`;
     try {
-      const match = url.match(/tiktok\.com\/@([a-zA-Z0-9_.-]+)/i);
-      if (match && match[1]) {
-        return `@${match[1]}`;
-      }
+      const match = video.video_url.match(/tiktok\.com\/@([a-zA-Z0-9_.-]+)/i);
+      if (match && match[1]) return `@${match[1]}`;
     } catch {}
     return null;
   };
 
-  const authorHandle = getTikTokAuthor(video.video_url);
+  const authorHandle = getAuthorDisplay();
+  const authorName = video.author_name || null;
 
-  // Lấy thumbnail từ video URL (nếu có)
-  const getThumbnail = (url) => {
+  // Thumbnail: ưu tiên metadata → YouTube fallback
+  const getThumbnail = () => {
+    if (video.thumbnail_url) return video.thumbnail_url;
     try {
-      const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      if (ytMatch) {
-        return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
-      }
+      const ytMatch = video.video_url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if (ytMatch) return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
     } catch {}
     return null;
   };
 
-  const thumbnail = getThumbnail(video.video_url);
+  const thumbnail = getThumbnail();
+
+  // Metadata formatting
+  const likes = formatCount(video.like_count);
+  const comments = formatCount(video.comment_count);
+  const shares = formatCount(video.share_count);
+  const views = formatCount(video.view_count);
+  const saves = formatCount(video.save_count);
+  const durationStr = formatDuration(video.duration);
+  const dateDisplay = timeAgo(video.upload_date);
+  const hasStats = likes !== null || views !== null;
 
   // Confidence score color
   const getScoreColor = (score) => {
@@ -158,7 +215,7 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
           </span>
         </div>
 
-        {/* Platform Badge & Reference Badge */}
+        {/* Platform Badge & Reference Badge & Duration */}
         <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">
           {video.is_reference && (
             <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-extrabold text-[9px] px-2 py-0.5 rounded-md shadow-md border border-amber-300 flex items-center gap-1">
@@ -168,6 +225,12 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
           <div className="bg-slate-900/90 text-cyan-300 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded-md border border-cyan-500/40 shadow-sm flex items-center gap-1">
             <span>🎵 TikTok</span>
           </div>
+          {durationStr && (
+            <div className="bg-black/70 text-white backdrop-blur-md text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1">
+              <Clock className="w-2.5 h-2.5" />
+              {durationStr}
+            </div>
+          )}
         </div>
 
         {/* Overlay hover action: Quick Open */}
@@ -202,12 +265,72 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
 
       {/* Info & Actions */}
       <div className="p-3.5 flex flex-col flex-1 justify-between bg-slate-900/90">
-        <h3 className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed mb-3 group-hover:text-cyan-300 transition-colors" title={video.title}>
+        {/* Author & Date Row */}
+        {(authorHandle || authorName || dateDisplay) && (
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {authorHandle && (
+                <span className="text-[10px] font-bold text-cyan-400 truncate">
+                  {authorHandle}
+                </span>
+              )}
+              {authorName && authorHandle && (
+                <span className="text-[9px] text-slate-500 truncate hidden sm:inline">
+                  · {authorName}
+                </span>
+              )}
+            </div>
+            {dateDisplay && (
+              <span className="text-[9px] text-slate-500 whitespace-nowrap ml-1" title={formatDate(video.upload_date)}>
+                {dateDisplay}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Title */}
+        <h3 className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed mb-2 group-hover:text-cyan-300 transition-colors" title={video.title}>
           {video.title}
         </h3>
 
+        {/* Engagement Stats Bar */}
+        {hasStats && (
+          <div className="flex items-center gap-3 mb-2.5 py-1.5 px-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+            {views !== null && (
+              <div className="flex items-center gap-1" title={`${video.view_count?.toLocaleString()} lượt xem`}>
+                <Eye className="w-3 h-3 text-slate-400" />
+                <span className="text-[10px] font-semibold text-slate-300">{views}</span>
+              </div>
+            )}
+            {likes !== null && (
+              <div className="flex items-center gap-1" title={`${video.like_count?.toLocaleString()} lượt thích`}>
+                <Heart className="w-3 h-3 text-rose-400" />
+                <span className="text-[10px] font-semibold text-slate-300">{likes}</span>
+              </div>
+            )}
+            {comments !== null && (
+              <div className="flex items-center gap-1" title={`${video.comment_count?.toLocaleString()} bình luận`}>
+                <MessageCircle className="w-3 h-3 text-sky-400" />
+                <span className="text-[10px] font-semibold text-slate-300">{comments}</span>
+              </div>
+            )}
+            {shares !== null && (
+              <div className="flex items-center gap-1" title={`${video.share_count?.toLocaleString()} chia sẻ`}>
+                <Share2 className="w-3 h-3 text-emerald-400" />
+                <span className="text-[10px] font-semibold text-slate-300">{shares}</span>
+              </div>
+            )}
+            {saves !== null && (
+              <div className="flex items-center gap-1" title={`${video.save_count?.toLocaleString()} lượt lưu`}>
+                <Bookmark className="w-3 h-3 text-amber-400" />
+                <span className="text-[10px] font-semibold text-slate-300">{saves}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-800 mt-auto">
           <a
             href={video.video_url}
             target="_blank"

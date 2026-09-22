@@ -36,6 +36,10 @@ export default function App() {
   // ── Output Platform Filter ──
   const [outputPlatforms, setOutputPlatforms] = useState(['tiktok']); // default: chỉ TikTok
 
+  // ── Metadata Source (Page Scrape hoặc Apify) ──
+  const [metadataSource, setMetadataSource] = useState('page_scrape'); // 'page_scrape' | 'apify'
+  const [apifyToken, setApifyToken] = useState('');
+
   // ── UI State ──
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState('');
@@ -134,6 +138,8 @@ export default function App() {
         visionPrimaryModel,
         visionSecondaryModel,
         outputPlatforms,
+        metadataSource,
+        apifyToken,
       });
 
       if (data.status === 'success') {
@@ -219,6 +225,10 @@ export default function App() {
             setVisionSecondaryModel={setVisionSecondaryModel}
             outputPlatforms={outputPlatforms}
             setOutputPlatforms={setOutputPlatforms}
+            metadataSource={metadataSource}
+            setMetadataSource={setMetadataSource}
+            apifyToken={apifyToken}
+            setApifyToken={setApifyToken}
             loading={loading}
             onSubmit={handleSearch}
           />
