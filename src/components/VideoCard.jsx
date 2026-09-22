@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Download, Copy, Check, Eye, Brain, BarChart3, Video as VideoIcon } from 'lucide-react';
+import { ExternalLink, Download, Copy, Check, Eye, Brain, BarChart3, Video as VideoIcon, Play } from 'lucide-react';
 import { downloadVideo } from '../services/api';
 
 export default function VideoCard({ video, isSelected = false, onToggleSelect }) {
@@ -8,16 +8,26 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Lấy thumbnail từ video URL
+  // Trích xuất username tác giả từ TikTok URL nếu có
+  const getTikTokAuthor = (url) => {
+    try {
+      const match = url.match(/tiktok\.com\/@([a-zA-Z0-9_.-]+)/i);
+      if (match && match[1]) {
+        return `@${match[1]}`;
+      }
+    } catch {}
+    return null;
+  };
+
+  const authorHandle = getTikTokAuthor(video.video_url);
+
+  // Lấy thumbnail từ video URL (nếu có)
   const getThumbnail = (url) => {
     try {
-      // YouTube video/shorts
       const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
       if (ytMatch) {
         return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
       }
-      // TikTok — không có API thumbnail công khai, trả null
-      // Instagram — cũng không có
     } catch {}
     return null;
   };
@@ -64,12 +74,12 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
     <div
       className={`group bg-slate-900 border rounded-2xl overflow-hidden transition-all duration-300 flex flex-col relative ${
         isSelected
-          ? 'border-purple-500 ring-2 ring-purple-500/50 shadow-xl shadow-purple-500/20 bg-slate-900/95'
-          : 'border-slate-800/90 hover:border-purple-500/40 hover:shadow-lg'
+          ? 'border-cyan-400 ring-2 ring-cyan-500/50 shadow-xl shadow-cyan-500/20 bg-slate-900/95'
+          : 'border-slate-800/90 hover:border-cyan-500/40 hover:shadow-lg'
       }`}
     >
-      {/* Thumbnail Container (Tỉ lệ chuẩn 9:16) */}
-      <div className="relative aspect-[9/16] w-full bg-slate-950 overflow-hidden">
+      {/* Thumbnail / TikTok Preview Container (Tỉ lệ chuẩn 9:16) */}
+      <div className="relative aspect-[9/16] w-full bg-slate-950 overflow-hidden select-none">
         {!imageError && thumbnail ? (
           <img
             src={thumbnail}
@@ -79,9 +89,40 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-slate-600 p-4 text-center">
-            <VideoIcon className="w-10 h-10 mb-2 opacity-50 text-purple-400" />
-            <span className="text-xs text-slate-500 font-medium line-clamp-3">{video.title}</span>
+          /* TikTok Stylized Card Backdrop */
+          <div className="w-full h-full flex flex-col items-center justify-between p-4 text-center bg-gradient-to-b from-slate-900 via-slate-950 to-black relative">
+            {/* Background Glow */}
+            <div className="absolute top-1/4 -left-10 w-28 h-28 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute bottom-1/4 -right-10 w-28 h-28 bg-rose-500/15 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Author Handle Header */}
+            <div className="pt-8 w-full z-10">
+              {authorHandle ? (
+                <span className="inline-block px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-[11px] font-bold text-cyan-300 shadow-sm truncate max-w-[90%]">
+                  {authorHandle}
+                </span>
+              ) : (
+                <span className="inline-block px-2 py-0.5 rounded-full bg-slate-800/80 text-[10px] font-medium text-slate-400">
+                  TikTok Video
+                </span>
+              )}
+            </div>
+
+            {/* Center Play Icon & Pulse */}
+            <div className="relative my-auto z-10 flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-rose-500 p-[2px] shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform">
+                <div className="w-full h-full bg-slate-950 rounded-full flex items-center justify-center">
+                  <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Title Snippet */}
+            <div className="pb-8 w-full z-10">
+              <p className="text-[11px] text-slate-300 font-medium line-clamp-3 leading-relaxed px-1">
+                {video.title}
+              </p>
+            </div>
           </div>
         )}
 
@@ -99,8 +140,8 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
               }}
               className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all border shadow-lg ${
                 isSelected
-                  ? 'bg-purple-600 border-purple-400 text-white scale-110'
-                  : 'bg-black/60 border-slate-600 text-transparent hover:border-purple-400 hover:scale-105 backdrop-blur-md'
+                  ? 'bg-cyan-500 border-cyan-300 text-slate-950 scale-110'
+                  : 'bg-black/60 border-slate-600 text-transparent hover:border-cyan-400 hover:scale-105 backdrop-blur-md'
               }`}
               title={isSelected ? 'Bỏ chọn video này' : 'Chọn video này để tạo Sheet'}
             >
@@ -124,23 +165,9 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
               ⭐ Video Mẫu
             </span>
           )}
-          {(() => {
-            const platformStyles = {
-              youtube: { label: 'YouTube', bg: 'bg-red-600/90', border: 'border-red-500/40' },
-              tiktok: { label: 'TikTok', bg: 'bg-slate-900/90', border: 'border-cyan-500/40' },
-              instagram: { label: 'Instagram', bg: 'bg-gradient-to-r from-purple-600/90 to-pink-500/90', border: 'border-pink-500/40' },
-              facebook: { label: 'Facebook', bg: 'bg-blue-600/90', border: 'border-blue-500/40' },
-              douyin: { label: 'Douyin', bg: 'bg-slate-900/90', border: 'border-amber-500/40' },
-              amazon: { label: 'Amazon', bg: 'bg-amber-600/90', border: 'border-amber-500/40' },
-              other: { label: 'Video', bg: 'bg-slate-700/90', border: 'border-slate-500/40' },
-            };
-            const p = platformStyles[video.platform] || platformStyles.other;
-            return (
-              <div className={`${p.bg} backdrop-blur-md text-[10px] font-bold text-white px-2 py-0.5 rounded-md border ${p.border}`}>
-                {p.label}
-              </div>
-            );
-          })()}
+          <div className="bg-slate-900/90 text-cyan-300 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded-md border border-cyan-500/40 shadow-sm flex items-center gap-1">
+            <span>🎵 TikTok</span>
+          </div>
         </div>
 
         {/* Overlay hover action: Quick Open */}
@@ -148,34 +175,34 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
           href={video.video_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="absolute inset-0 z-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
+          className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300"
         >
-          <span className="flex items-center gap-2 bg-white/90 text-slate-900 font-bold text-xs px-4 py-2 rounded-full shadow-xl hover:scale-105 transition-transform">
+          <span className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-rose-500 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-full shadow-xl hover:scale-105 transition-transform">
             <ExternalLink className="w-3.5 h-3.5" />
-            Xem Trực Tiếp
+            Xem Trên TikTok
           </span>
         </a>
 
         {/* Score bar at bottom */}
         <div className="absolute bottom-3 left-3 right-3 z-10">
-          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm px-2.5 py-1.5 rounded-lg">
-            <BarChart3 className="w-3 h-3 text-purple-400 shrink-0" />
+          <div className="flex items-center gap-2 bg-black/70 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-slate-800">
+            <BarChart3 className="w-3 h-3 text-cyan-400 shrink-0" />
             <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  scorePercent >= 70 ? 'bg-emerald-400' : scorePercent >= 40 ? 'bg-amber-400' : 'bg-rose-400'
+                  scorePercent >= 70 ? 'bg-cyan-400' : scorePercent >= 40 ? 'bg-amber-400' : 'bg-rose-400'
                 }`}
                 style={{ width: `${scorePercent}%` }}
               />
             </div>
-            <span className="text-[10px] text-slate-400 font-medium">{video.confidence_score.toFixed(3)}</span>
+            <span className="text-[10px] text-slate-300 font-mono font-medium">{video.confidence_score.toFixed(3)}</span>
           </div>
         </div>
       </div>
 
       {/* Info & Actions */}
-      <div className="p-4 flex flex-col flex-1 justify-between bg-slate-900/90">
-        <h3 className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed mb-3 group-hover:text-purple-300 transition-colors" title={video.title}>
+      <div className="p-3.5 flex flex-col flex-1 justify-between bg-slate-900/90">
+        <h3 className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed mb-3 group-hover:text-cyan-300 transition-colors" title={video.title}>
           {video.title}
         </h3>
 
@@ -185,10 +212,10 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
             href={video.video_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-200 text-xs font-medium border border-slate-700 hover:border-slate-600 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-200 text-xs font-semibold border border-slate-700 hover:border-cyan-500/50 transition-colors"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-            <span>Mở</span>
+            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Mở TikTok</span>
           </a>
 
           <button
@@ -198,11 +225,11 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
             className={`flex items-center justify-center p-2 rounded-xl text-xs font-medium border transition-colors ${
               downloadSuccess
                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                : 'bg-purple-600/10 hover:bg-purple-600/20 text-purple-300 border-purple-500/30 hover:border-purple-500/50'
+                : 'bg-cyan-600/10 hover:bg-cyan-600/20 text-cyan-300 border-cyan-500/30 hover:border-cyan-500/50'
             }`}
           >
             {downloading ? (
-              <div className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
             ) : downloadSuccess ? (
               <Check className="w-4 h-4 text-emerald-400" />
             ) : (
@@ -212,7 +239,7 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
 
           <button
             onClick={handleCopyLink}
-            title="Sao chép liên kết"
+            title="Sao chép liên kết TikTok"
             className="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-400 hover:text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
