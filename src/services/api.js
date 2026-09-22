@@ -31,6 +31,7 @@ export function extractAsinFromUrl(url) {
  */
 export async function searchVideos({
   videoUrls,
+  imagesBase64 = [],
   productUrl,
   productName,
   asin,
@@ -56,6 +57,7 @@ export async function searchVideos({
     `${API_BASE}/api/v1/product-video-retrieval`,
     {
       video_urls: validUrls,
+      images_base64: imagesBase64 || [],
       product_url: (productUrl || '').trim(),
       product_name: productName.trim(),
       asin: (asin || '').trim(),

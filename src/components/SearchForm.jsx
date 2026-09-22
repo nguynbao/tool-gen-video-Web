@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search,
   Link as LinkIcon,
@@ -16,7 +16,10 @@ import {
   Sparkles,
   Cpu,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ImagePlus,
+  Upload,
+  Trash2,
 } from 'lucide-react';
 
 import { extractAsinFromUrl } from '../services/api';
@@ -27,8 +30,12 @@ const GEMINI_MODEL_STORAGE = 'shorts_hunter_gemini_model';
 const AI_PROVIDER_STORAGE = 'shorts_hunter_ai_provider';
 
 export default function SearchForm({
+  inputMode,
+  setInputMode,
   videoUrls,
   setVideoUrls,
+  uploadedImages,
+  setUploadedImages,
   productUrl,
   setProductUrl,
   productName,
@@ -132,6 +139,60 @@ export default function SearchForm({
 
   const validUrlCount = videoUrls.filter((u) => u && u.trim().length > 0).length;
   const hasValidUrl = validUrlCount > 0;
+  const hasValidImage = uploadedImages && uploadedImages.length > 0;
+  const hasValidInput = inputMode === 'video' ? hasValidUrl : hasValidImage;
+
+  // ── Image Upload Handlers ──
+  const fileInputRef = useRef(null);
+
+  const fileToBase64 = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Strip data:image/...;base64, prefix
+        const base64 = reader.result.split(',')[1];
+        resolve(base64);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageFiles = useCallback(async (files) => {
+    const validFiles = Array.from(files).filter(
+      (f) => f.type.startsWith('image/') && f.size <= 5 * 1024 * 1024
+    );
+    const remaining = 5 - (uploadedImages?.length || 0);
+    const toAdd = validFiles.slice(0, remaining);
+
+    const newImages = await Promise.all(
+      toAdd.map(async (file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        base64: await fileToBase64(file),
+      }))
+    );
+    setUploadedImages((prev) => [...(prev || []), ...newImages]);
+  }, [uploadedImages, setUploadedImages]);
+
+  const removeImage = (index) => {
+    setUploadedImages((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      // Revoke old preview URL
+      if (prev[index]?.preview) URL.revokeObjectURL(prev[index].preview);
+      return updated;
+    });
+  };
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleImageFiles(e.dataTransfer.files);
+  }, [handleImageFiles]);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
 
   return (
     <form
@@ -264,66 +325,174 @@ export default function SearchForm({
       {/*  SECTION 2: LINK VIDEO MẪU & LINK SẢN PHẨM GỐC (CÂN XỨNG HOÀN HẢO)   */}
       {/* ═════════════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10 items-stretch">
-        {/* CỘT TRÁI: Link Video Mẫu (Nhiều URL) */}
+        {/* CỘT TRÁI: Toggle Link Video / Upload Ảnh */}
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between space-y-3">
           <div>
-            {/* Header Cột Trái */}
-            <div className="flex items-center justify-between mb-2.5 h-6">
-              <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                <Video className="w-4 h-4 text-purple-400" />
-                <span>Link Video Mẫu Đầu Vào</span>
-                <span className="text-rose-400">*</span>
-              </label>
-              <span className="text-[10px] font-bold text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-500/30">
-                {validUrlCount}/5 video
-              </span>
-            </div>
-
-            {/* Danh Sách Inputs */}
-            <div className="space-y-2">
-              {videoUrls.map((url, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-300 text-[11px] font-bold flex items-center justify-center shrink-0 border border-purple-500/30">
-                    {index + 1}
-                  </div>
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => updateUrl(index, e.target.value)}
-                    placeholder={index === 0 ? 'Dán link video TikTok / YouTube / Douyin...' : 'Dán link video mẫu khác...'}
-                    required={index === 0}
-                    className="flex-1 h-10 bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-mono"
-                  />
-                  {videoUrls.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeUrl(index)}
-                      className="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-colors shrink-0"
-                      title="Xóa link này"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Cột Trái */}
-          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-            {videoUrls.length < 5 ? (
+            {/* Toggle: Link Video / Upload Ảnh */}
+            <div className="flex items-center gap-1.5 mb-3">
               <button
                 type="button"
-                onClick={addUrl}
-                className="flex items-center gap-1.5 text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors py-1 px-2 rounded-lg hover:bg-purple-500/10"
+                onClick={() => setInputMode('video')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-[11px] font-bold transition-all border ${
+                  inputMode === 'video'
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-sm shadow-purple-500/10'
+                    : 'bg-slate-800/70 text-slate-400 border-slate-700/60 hover:text-slate-200 hover:border-slate-600'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Thêm video mẫu ({videoUrls.length}/5)</span>
+                <Video className="w-3.5 h-3.5" />
+                Link Video
               </button>
-            ) : (
-              <span className="text-[11px] text-slate-500">Đã đạt tối đa 5 video mẫu</span>
+              <button
+                type="button"
+                onClick={() => setInputMode('image')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-[11px] font-bold transition-all border ${
+                  inputMode === 'image'
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm shadow-cyan-500/10'
+                    : 'bg-slate-800/70 text-slate-400 border-slate-700/60 hover:text-slate-200 hover:border-slate-600'
+                }`}
+              >
+                <ImagePlus className="w-3.5 h-3.5" />
+                Upload Ảnh
+              </button>
+            </div>
+
+            {/* === MODE: VIDEO === */}
+            {inputMode === 'video' && (
+              <>
+                <div className="flex items-center justify-between mb-2.5 h-6">
+                  <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <Video className="w-4 h-4 text-purple-400" />
+                    <span>Link Video Mẫu Đầu Vào</span>
+                    <span className="text-rose-400">*</span>
+                  </label>
+                  <span className="text-[10px] font-bold text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-500/30">
+                    {validUrlCount}/5 video
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {videoUrls.map((url, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-300 text-[11px] font-bold flex items-center justify-center shrink-0 border border-purple-500/30">
+                        {index + 1}
+                      </div>
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={(e) => updateUrl(index, e.target.value)}
+                        placeholder={index === 0 ? 'Dán link video TikTok / YouTube / Douyin...' : 'Dán link video mẫu khác...'}
+                        required={index === 0}
+                        className="flex-1 h-10 bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-mono"
+                      />
+                      {videoUrls.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeUrl(index)}
+                          className="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-colors shrink-0"
+                          title="Xóa link này"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
-            <span className="text-[10px] text-slate-500">Tất cả video nhập sẽ được giữ lại</span>
+
+            {/* === MODE: IMAGE === */}
+            {inputMode === 'image' && (
+              <>
+                <div className="flex items-center justify-between mb-2.5 h-6">
+                  <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <ImagePlus className="w-4 h-4 text-cyan-400" />
+                    <span>Ảnh Sản Phẩm</span>
+                    <span className="text-rose-400">*</span>
+                  </label>
+                  <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                    {uploadedImages?.length || 0}/5 ảnh
+                  </span>
+                </div>
+
+                {/* Drag & Drop Zone */}
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-4 text-center cursor-pointer transition-all hover:bg-cyan-500/5 group"
+                >
+                  <Upload className="w-6 h-6 text-slate-500 group-hover:text-cyan-400 mx-auto mb-2 transition-colors" />
+                  <p className="text-[11px] text-slate-400 group-hover:text-slate-300">
+                    Kéo thả ảnh vào đây hoặc <span className="text-cyan-400 font-semibold">bấm để chọn</span>
+                  </p>
+                  <p className="text-[9px] text-slate-600 mt-1">JPG, PNG, WebP · Tối đa 5MB/ảnh · Tối đa 5 ảnh</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleImageFiles(e.target.files)}
+                  />
+                </div>
+
+                {/* Image Previews */}
+                {uploadedImages && uploadedImages.length > 0 && (
+                  <div className="grid grid-cols-5 gap-2 mt-3">
+                    {uploadedImages.map((img, index) => (
+                      <div key={index} className="relative group/img aspect-square rounded-lg overflow-hidden border border-slate-700">
+                        <img
+                          src={img.preview}
+                          alt={`Ảnh ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeImage(index); }}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-rose-400 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-rose-500 hover:text-white"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+            {inputMode === 'video' ? (
+              <>
+                {videoUrls.length < 5 ? (
+                  <button
+                    type="button"
+                    onClick={addUrl}
+                    className="flex items-center gap-1.5 text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors py-1 px-2 rounded-lg hover:bg-purple-500/10"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thêm video mẫu ({videoUrls.length}/5)</span>
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-slate-500">Đã đạt tối đa 5 video mẫu</span>
+                )}
+                <span className="text-[10px] text-slate-500">Tất cả video nhập sẽ được giữ lại</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] text-slate-500">Ảnh dùng để AI nhận diện & so khớp visual</span>
+                {uploadedImages && uploadedImages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setUploadedImages([])}
+                    className="flex items-center gap-1 text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Xóa hết
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -569,9 +738,9 @@ export default function SearchForm({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading || !productName.trim() || !hasValidUrl}
+          disabled={loading || !productName.trim() || !hasValidInput}
           className={`w-full flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xl mt-2 ${
-            loading || !productName.trim() || !hasValidUrl
+            loading || !productName.trim() || !hasValidInput
               ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
               : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white shadow-purple-600/30 hover:shadow-purple-600/50 hover:scale-[1.01] active:scale-[0.99]'
           }`}

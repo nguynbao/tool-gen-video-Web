@@ -15,7 +15,9 @@ import EmptyState from './components/EmptyState';
 
 export default function App() {
   // ── Form State ──
+  const [inputMode, setInputMode] = useState('video'); // 'video' | 'image'
   const [videoUrls, setVideoUrls] = useState(['']);
+  const [uploadedImages, setUploadedImages] = useState([]); // [{file, preview, base64}]
   const [productUrl, setProductUrl] = useState('');
   const [productName, setProductName] = useState('');
   const [asin, setAsin] = useState('');
@@ -115,7 +117,9 @@ export default function App() {
   // ── Search Handler ──
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!productName.trim() || !videoUrls.some((u) => u && u.trim())) return;
+    const hasVideos = videoUrls.some((u) => u && u.trim());
+    const hasImages = uploadedImages && uploadedImages.length > 0;
+    if (!productName.trim() || (!hasVideos && !hasImages)) return;
 
     setError(null);
     setLoading(true);
@@ -125,7 +129,8 @@ export default function App() {
 
     try {
       const data = await searchVideos({
-        videoUrls,
+        videoUrls: inputMode === 'video' ? videoUrls : [],
+        imagesBase64: inputMode === 'image' ? uploadedImages.map(img => img.base64) : [],
         productUrl,
         productName,
         asin,
@@ -199,8 +204,12 @@ export default function App() {
 
         <div className="max-w-4xl mx-auto mb-10">
           <SearchForm
+            inputMode={inputMode}
+            setInputMode={setInputMode}
             videoUrls={videoUrls}
             setVideoUrls={setVideoUrls}
+            uploadedImages={uploadedImages}
+            setUploadedImages={setUploadedImages}
             productUrl={productUrl}
             setProductUrl={setProductUrl}
             productName={productName}
