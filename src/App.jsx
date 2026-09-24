@@ -288,8 +288,16 @@ export default function App() {
         {!loading && results.length === 0 && !error && <EmptyState />}
       </main>
 
-      <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500 bg-slate-950/40">
-        <p>Shorts Hunter v3.0 · AI-Powered Video Retrieval with Google Gemini Ultra/Pro + Hugging Face</p>
+      <footer className="border-t border-slate-800/60 py-6 text-xs text-slate-500 bg-slate-950/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <p>Shorts Hunter v3.0 · AI-Powered Video Retrieval with Google Gemini & Hugging Face</p>
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <span>by</span>
+            <span className="font-semibold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">
+              Bảo Nguyễn
+            </span>
+          </div>
+        </div>
       </footer>
     </div>
   );
