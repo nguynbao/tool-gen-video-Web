@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
  
  /**
   * Tự động trích xuất mã ASIN (10 ký tự) từ đường dẫn sản phẩm Amazon
@@ -89,6 +89,22 @@ export async function searchVideos({
  */
 export async function checkHealth() {
   const res = await axios.get(`${API_BASE}/api/health`, { timeout: 3000 });
+  return res.data;
+}
+
+/**
+ * Kiểm tra phiên bản mới trên GitHub.
+ */
+export async function checkForUpdates() {
+  const res = await axios.get(`${API_BASE}/api/v1/system/check-update`, { timeout: 8000 });
+  return res.data;
+}
+
+/**
+ * Tải và cập nhật ứng dụng in-app không cần tải lại bộ cài.
+ */
+export async function applyInAppUpdate() {
+  const res = await axios.post(`${API_BASE}/api/v1/system/apply-update`, {}, { timeout: 60000 });
   return res.data;
 }
 

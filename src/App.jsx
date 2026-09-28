@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 // Services
-import { searchVideos, checkHealth } from './services/api';
+import { searchVideos, checkHealth, checkForUpdates } from './services/api';
 
 // Components
 import Header from './components/Header';
@@ -12,6 +12,7 @@ import ErrorAlert from './components/ErrorAlert';
 import ResultsGrid from './components/ResultsGrid';
 import SheetGenerator from './components/SheetGenerator';
 import EmptyState from './components/EmptyState';
+import UpdateModal from './components/UpdateModal';
 
 export default function App() {
   // ── Form State ──
@@ -57,8 +58,13 @@ export default function App() {
   // ── Server Status ──
   const [serverStatus, setServerStatus] = useState('checking');
   const [serverDevice, setServerDevice] = useState('');
+  const [appVersion, setAppVersion] = useState('3.0.0');
 
-  // ── Server Health Check ──
+  // ── Auto-Update State ──
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState(null);
+
+  // ── Server Health Check & Update Check ──
   const checkServerConnection = useCallback(async () => {
     setServerStatus('checking');
     try {
@@ -66,6 +72,7 @@ export default function App() {
       if (data?.status === 'ok') {
         setServerStatus('connected');
         setServerDevice(data.device || '');
+        if (data.version) setAppVersion(data.version);
       } else {
         setServerStatus('disconnected');
       }
@@ -74,11 +81,44 @@ export default function App() {
     }
   }, []);
 
+  // Tự động kiểm tra bản cập nhật mới trên GitHub
+  const handleCheckUpdates = useCallback(async (manual = false) => {
+    try {
+      const data = await checkForUpdates();
+      if (data) {
+        setUpdateInfo(data);
+        if (data.current_version) setAppVersion(data.current_version);
+        if (manual || data.has_update) {
+          setIsUpdateModalOpen(true);
+        }
+      }
+    } catch (err) {
+      console.warn('Không thể kiểm tra cập nhật:', err);
+      if (manual) {
+        setUpdateInfo({
+          has_update: false,
+          current_version: appVersion,
+          latest_version: appVersion,
+          release_notes: 'Không thể kết nối đến máy chủ kiểm tra cập nhật.',
+        });
+        setIsUpdateModalOpen(true);
+      }
+    }
+  }, [appVersion]);
+
   useEffect(() => {
     checkServerConnection();
+    // Tự động kiểm tra cập nhật sau 2 giây khi mở app
+    const timer = setTimeout(() => {
+      handleCheckUpdates(false);
+    }, 2000);
+
     const interval = setInterval(checkServerConnection, 15000);
-    return () => clearInterval(interval);
-  }, [checkServerConnection]);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
+  }, [checkServerConnection, handleCheckUpdates]);
 
   // ── Loading Timer + Stage Animation ──
   useEffect(() => {
@@ -196,7 +236,10 @@ export default function App() {
       <Header
         serverStatus={serverStatus}
         serverDevice={serverDevice}
+        appVersion={appVersion}
+        hasUpdate={updateInfo?.has_update || false}
         onRetryConnection={checkServerConnection}
+        onOpenUpdateModal={() => handleCheckUpdates(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -299,6 +342,14 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <UpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        updateInfo={updateInfo}
+        onUpdateSuccess={() => {
+          if (updateInfo?.latest_version) setAppVersion(updateInfo.latest_version);
+        }}
+      />
     </div>
   );
 }

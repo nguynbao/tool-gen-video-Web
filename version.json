@@ -1,0 +1,7 @@
+{
+  "version": "3.0.0",
+  "name": "Shorts Hunter AI",
+  "release_notes": "🎉 Bản phát hành v3.0.0: Hỗ trợ đóng gói Desktop App độc lập (.dmg macOS & .exe Windows), tích hợp hệ thống In-App Auto-Update 1-Click.",
+  "hot_update_url": "https://github.com/nguynbao/tool-gen-video-Web/archive/refs/heads/main.zip",
+  "download_url": "https://github.com/nguynbao/tool-gen-video-Web/releases"
+}
