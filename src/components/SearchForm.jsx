@@ -20,6 +20,7 @@ import {
   ImagePlus,
   Upload,
   Trash2,
+  Music2,
 } from 'lucide-react';
 
 import { extractAsinFromUrl } from '../services/api';
@@ -71,12 +72,39 @@ export default function SearchForm({
   setApifyToken,
   apifyActorId,
   setApifyActorId,
+  // Viral Audio Search
+  extractViralAudio,
+  setExtractViralAudio,
+  viralAudioSource,
+  setViralAudioSource,
+  rapidApiTikTokKey,
+  setRapidApiTikTokKey,
   loading,
   onSubmit
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [rememberKey, setRememberKey] = useState(true);
+
+  // ── Detect TikTok URL realtime để hiện/ẩn checkbox viral audio ──
+  const isTikTokUrl = (url) =>
+    /tiktok\.com\/@[^/]+\/video\/\d+|vm\.tiktok\.com\/\w+/i.test(url || '');
+
+  const showViralAudioBox =
+    typeof setExtractViralAudio === 'function' && isTikTokUrl(videoUrls?.[0]);
+
+  // Tự động ẩn checkbox nếu URL thay đổi sang non-TikTok
+  useEffect(() => {
+    if (!showViralAudioBox && extractViralAudio && setExtractViralAudio) {
+      setExtractViralAudio(false);
+    }
+  }, [showViralAudioBox, extractViralAudio, setExtractViralAudio]);
+
+  // Lưu RapidAPI key vào localStorage khi nhập
+  const handleRapidApiKeyChange = (val) => {
+    if (setRapidApiTikTokKey) setRapidApiTikTokKey(val);
+    try { localStorage.setItem('shorts_hunter_rapidapi_tiktok', val.trim()); } catch {}
+  };
 
   // Load API Key & Model from LocalStorage on mount
   useEffect(() => {
@@ -397,6 +425,103 @@ export default function SearchForm({
                   ))}
                 </div>
               </>
+            )}
+
+            {/* ── VIRAL AUDIO CHECKBOX (hiện realtime khi URL[0] là TikTok) ── */}
+            {inputMode === 'video' && showViralAudioBox && (
+              <div className="mt-3 p-3 rounded-xl bg-gradient-to-br from-fuchsia-950/60 to-pink-950/40 border border-fuchsia-500/30 space-y-2.5 animate-in fade-in-50 slide-in-from-top-1">
+                {/* Toggle checkbox */}
+                <label className="flex items-center gap-2.5 cursor-pointer group/check">
+                  <div
+                    onClick={() => setExtractViralAudio && setExtractViralAudio(!extractViralAudio)}
+                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                      extractViralAudio
+                        ? 'bg-fuchsia-500 border-fuchsia-400 shadow-md shadow-fuchsia-500/30'
+                        : 'bg-slate-800 border-slate-600 group-hover/check:border-fuchsia-400/60'
+                    }`}
+                  >
+                    {extractViralAudio && (
+                      <svg className="w-3 h-3 text-white stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-fuchsia-200 flex items-center gap-1.5">
+                      <Music2 className="w-3.5 h-3.5 text-fuchsia-400" />
+                      Tìm video có cùng âm thanh viral
+                    </span>
+                    <p className="text-[9px] text-slate-400 mt-0.5">
+                      Phân tích nhạc từ video mẫu → tìm thêm video TikTok dùng cùng âm thanh đó
+                    </p>
+                  </div>
+                </label>
+
+                {/* Nguồn + RapidAPI key (chỉ hiện khi tick) */}
+                {extractViralAudio && (
+                  <div className="space-y-2 pt-1.5 border-t border-fuchsia-500/20">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Nguồn tìm kiếm
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setViralAudioSource && setViralAudioSource('free')}
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
+                          viralAudioSource === 'free'
+                            ? 'bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-500/50 shadow-sm'
+                            : 'bg-slate-800/90 text-slate-400 border-slate-700/80 hover:text-slate-200'
+                        }`}
+                      >
+                        🌐 Miễn phí
+                        <span className="block text-[9px] font-normal opacity-70 mt-0.5">BeautifulSoup</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViralAudioSource && setViralAudioSource('rapidapi')}
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
+                          viralAudioSource === 'rapidapi'
+                            ? 'bg-pink-500/20 text-pink-200 border-pink-500/50 shadow-sm'
+                            : 'bg-slate-800/90 text-slate-400 border-slate-700/80 hover:text-slate-200'
+                        }`}
+                      >
+                        ⚡ RapidAPI
+                        <span className="block text-[9px] font-normal opacity-70 mt-0.5">Nhanh · Ổn định</span>
+                      </button>
+                    </div>
+
+                    {viralAudioSource === 'rapidapi' && (
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
+                          <Key className="w-3 h-3 text-pink-400" />
+                          RapidAPI Key
+                        </label>
+                        <input
+                          type="password"
+                          value={rapidApiTikTokKey || ''}
+                          onChange={(e) => handleRapidApiKeyChange(e.target.value)}
+                          placeholder="Dán RapidAPI Key..."
+                          className="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 placeholder-slate-600 focus:border-pink-500/50 outline-none transition-all font-mono"
+                        />
+                        <p className="text-[9px] text-slate-600">
+                          API:{' '}
+                          <span className="text-pink-400">tiktok-video-no-watermark2</span>{' '}
+                          tại{' '}
+                          <a
+                            href="https://rapidapi.com/search/tiktok-video-no-watermark"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-pink-400 hover:underline"
+                          >
+                            rapidapi.com
+                          </a>
+                          {' '}· Free 100 req/tháng
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* === MODE: IMAGE === */}

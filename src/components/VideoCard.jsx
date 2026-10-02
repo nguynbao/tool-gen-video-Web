@@ -230,11 +230,21 @@ export default function VideoCard({ video, isSelected = false, onToggleSelect })
           </span>
         </div>
 
-        {/* Platform Badge & Reference Badge & Duration */}
+        {/* Platform Badge & Reference Badge & Duration & Source Type */}
         <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">
           {video.is_reference && (
             <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-extrabold text-[9px] px-2 py-0.5 rounded-md shadow-md border border-amber-300 flex items-center gap-1">
               ⭐ Video Mẫu
+            </span>
+          )}
+          {!video.is_reference && video.source_type === 'same_audio' && (
+            <span className="bg-gradient-to-r from-fuchsia-600 to-pink-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-md shadow-md flex items-center gap-1">
+              🎵 Same Audio
+            </span>
+          )}
+          {!video.is_reference && video.source_type === 'ai_match' && (
+            <span className="bg-cyan-500/20 text-cyan-300 font-bold text-[9px] px-2 py-0.5 rounded-md border border-cyan-500/40 flex items-center gap-1">
+              🎯 AI Match
             </span>
           )}
           <div className="bg-slate-900/90 text-cyan-300 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded-md border border-cyan-500/40 shadow-sm flex items-center gap-1">

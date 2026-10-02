@@ -51,6 +51,10 @@ export async function searchVideos({
   metadataSource = 'page_scrape',
   apifyToken = '',
   apifyActorId = '',
+  // Viral audio search
+  extractViralAudio = false,
+  viralAudioSource = 'free',
+  rapidApiTikTokKey = '',
 }) {
   const validUrls = videoUrls.filter((u) => u && u.trim());
   const res = await axios.post(
@@ -77,11 +81,16 @@ export async function searchVideos({
       metadata_source: metadataSource || 'page_scrape',
       apify_token: (apifyToken || '').trim(),
       apify_actor_id: (apifyActorId || '').trim(),
+      // Viral audio
+      extract_viral_audio: extractViralAudio || false,
+      viral_audio_source: viralAudioSource || 'free',
+      rapidapi_tiktok_key: (rapidApiTikTokKey || '').trim(),
     },
     { timeout: 600000 } // 10 phút timeout cho AI pipeline
   );
   return res.data;
 }
+
 
 
 /**

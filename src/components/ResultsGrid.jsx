@@ -17,6 +17,7 @@ import {
   Share2,
   Calendar,
   TrendingUp,
+  Music2,
 } from 'lucide-react';
 import VideoCard from './VideoCard';
 
@@ -41,6 +42,7 @@ export default function ResultsGrid({
   onToggleSelect,
   onSelectAll,
   onDeselectAll,
+  viralAudioInfo = null,
 }) {
   const [sortBy, setSortBy] = useState('confidence');
 
@@ -80,6 +82,50 @@ export default function ResultsGrid({
 
   return (
     <div className="space-y-6">
+      {/* ── Viral Audio Info Banner (hiện khi có dữ liệu âm thanh viral) ── */}
+      {viralAudioInfo && viralAudioInfo.music_id && (
+        <div className="bg-gradient-to-br from-fuchsia-950/70 to-pink-950/50 border border-fuchsia-500/30 rounded-2xl p-4 shadow-xl flex items-center gap-4">
+          {/* Cover nhạc */}
+          {viralAudioInfo.music_cover_url ? (
+            <img
+              src={viralAudioInfo.music_cover_url}
+              alt="music cover"
+              className="w-14 h-14 rounded-xl object-cover border border-fuchsia-500/30 shrink-0 shadow-md"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-xl bg-fuchsia-500/20 border border-fuchsia-500/30 flex items-center justify-center shrink-0">
+              <Music2 className="w-6 h-6 text-fuchsia-400" />
+            </div>
+          )}
+
+          {/* Thông tin nhạc */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+              <span className="text-[10px] font-bold text-fuchsia-300 bg-fuchsia-500/15 px-2 py-0.5 rounded-full border border-fuchsia-500/30 flex items-center gap-1">
+                <Music2 className="w-2.5 h-2.5" />
+                Âm thanh viral được phát hiện
+              </span>
+            </div>
+            <p className="text-sm font-bold text-white truncate">
+              {viralAudioInfo.music_title || 'original sound'}
+            </p>
+            <p className="text-xs text-fuchsia-300/80">
+              {viralAudioInfo.music_author ? `by ${viralAudioInfo.music_author}` : ''}
+              {viralAudioInfo.music_duration ? ` · ${viralAudioInfo.music_duration}s` : ''}
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] text-slate-400">Video cùng nhạc</p>
+            <p className="text-lg font-bold text-fuchsia-300">
+              {results.filter(v => v.source_type === 'same_audio').length}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Banner Thông Tin Sản Phẩm & Link Gốc ── */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -202,7 +248,6 @@ export default function ResultsGrid({
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
-            {/* Nút chọn tất cả / bỏ chọn */}
             {results.length > 0 && (
               <div className="flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 text-xs">
                 <button
@@ -234,20 +279,78 @@ export default function ResultsGrid({
         </div>
       </div>
 
-      {/* Video Cards Grid (Chuẩn tỉ lệ dọc 9:16) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-        {sortedResults.map((video, index) => {
-          const isSelected = selectedVideos.some((v) => v.video_url === video.video_url);
-          return (
-            <VideoCard
-              key={`${video.video_url}-${index}`}
-              video={video}
-              isSelected={isSelected}
-              onToggleSelect={onToggleSelect}
-            />
-          );
-        })}
-      </div>
+      {/* ── SECTION 1: Video Sản Phẩm (AI Match + Reference) ── */}
+      {(() => {
+        const aiVideos = sortedResults.filter(v => v.source_type !== 'same_audio');
+        if (aiVideos.length === 0) return null;
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                🎯 Video Sản Phẩm Liên Quan
+                <span className="bg-cyan-500/20 text-cyan-200 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+                  {aiVideos.length}
+                </span>
+              </span>
+              <div className="flex-1 h-px bg-cyan-500/15" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              {aiVideos.map((video, index) => {
+                const isSelected = selectedVideos.some((v) => v.video_url === video.video_url);
+                return (
+                  <VideoCard
+                    key={`ai-${video.video_url}-${index}`}
+                    video={video}
+                    isSelected={isSelected}
+                    onToggleSelect={onToggleSelect}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── SECTION 2: Video Cùng Âm Thanh Viral ── */}
+      {(() => {
+        const audioVideos = results.filter(v => v.source_type === 'same_audio');
+        if (audioVideos.length === 0) return null;
+        return (
+          <div className="space-y-3">
+            {/* Divider với label */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-500/25 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                <Music2 className="w-3 h-3 text-fuchsia-400" />
+                Video Cùng Âm Thanh Viral
+                <span className="bg-fuchsia-500/20 text-fuchsia-200 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+                  {audioVideos.length}
+                </span>
+              </span>
+              <div className="flex-1 h-px bg-fuchsia-500/15" />
+            </div>
+            {viralAudioInfo && (
+              <p className="text-[10px] text-slate-500 pl-0.5">
+                Nhạc: <span className="text-fuchsia-400 font-semibold">{viralAudioInfo.music_title}</span>
+                {viralAudioInfo.music_author && <span> by {viralAudioInfo.music_author}</span>}
+                {' '}— Các video đang dùng cùng âm thanh với video mẫu
+              </p>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              {audioVideos.map((video, index) => {
+                const isSelected = selectedVideos.some((v) => v.video_url === video.video_url);
+                return (
+                  <VideoCard
+                    key={`audio-${video.video_url}-${index}`}
+                    video={video}
+                    isSelected={isSelected}
+                    onToggleSelect={onToggleSelect}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

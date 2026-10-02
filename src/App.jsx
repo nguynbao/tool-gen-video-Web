@@ -44,6 +44,16 @@ export default function App() {
   const [apifyToken, setApifyToken] = useState('');
   const [apifyActorId, setApifyActorId] = useState('');
 
+  // ── Viral Audio Search ──
+  const [extractViralAudio, setExtractViralAudio] = useState(false);
+  const [viralAudioSource, setViralAudioSource] = useState('free'); // 'free' | 'rapidapi'
+  const [rapidApiTikTokKey, setRapidApiTikTokKey] = useState(
+    () => {
+      try { return localStorage.getItem('shorts_hunter_rapidapi_tiktok') || ''; }
+      catch { return ''; }
+    }
+  );
+
   // ── UI State ──
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState('');
@@ -54,6 +64,7 @@ export default function App() {
   const [results, setResults] = useState([]);
   const [totalFound, setTotalFound] = useState(0);
   const [selectedVideos, setSelectedVideos] = useState([]);
+  const [viralAudioInfo, setViralAudioInfo] = useState(null);
 
   // ── Server Status ──
   const [serverStatus, setServerStatus] = useState('checking');
@@ -166,6 +177,7 @@ export default function App() {
     setResults([]);
     setSelectedVideos([]);
     setTotalFound(0);
+    setViralAudioInfo(null);
 
     try {
       const data = await searchVideos({
@@ -187,15 +199,23 @@ export default function App() {
         metadataSource,
         apifyToken,
         apifyActorId,
+        extractViralAudio,
+        viralAudioSource,
+        rapidApiTikTokKey,
       });
 
       if (data.status === 'success') {
         const found = data.results || [];
         setResults(found);
-        
+
         // Cập nhật mã ASIN nếu server tự động bóc tách được
         if (data.asin && (!asin || asin !== data.asin)) {
           setAsin(data.asin);
+        }
+
+        // Lưu thông tin âm thanh viral (nếu có)
+        if (data.viral_audio_info) {
+          setViralAudioInfo(data.viral_audio_info);
         }
 
         // Mặc định chọn tất cả video mẫu đầu vào (hoặc ít nhất Top 1)
@@ -285,6 +305,12 @@ export default function App() {
             setApifyToken={setApifyToken}
             apifyActorId={apifyActorId}
             setApifyActorId={setApifyActorId}
+            extractViralAudio={extractViralAudio}
+            setExtractViralAudio={setExtractViralAudio}
+            viralAudioSource={viralAudioSource}
+            setViralAudioSource={setViralAudioSource}
+            rapidApiTikTokKey={rapidApiTikTokKey}
+            setRapidApiTikTokKey={setRapidApiTikTokKey}
             loading={loading}
             onSubmit={handleSearch}
           />
@@ -311,6 +337,7 @@ export default function App() {
               onToggleSelect={handleToggleSelect}
               onSelectAll={handleSelectAll}
               onDeselectAll={handleDeselectAll}
+              viralAudioInfo={viralAudioInfo}
             />
 
             {/* Bảng cấu hình & Xem trước Google Sheets */}
@@ -333,7 +360,7 @@ export default function App() {
 
       <footer className="border-t border-slate-800/60 py-6 text-xs text-slate-500 bg-slate-950/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <p>Shorts Hunter v3.0 · AI-Powered Video Retrieval with Google Gemini & Hugging Face</p>
+          <p>Shorts Hunter v3.1.0 · AI-Powered Video Retrieval with Google Gemini & Hugging Face</p>
           <div className="flex items-center gap-1.5 text-slate-400">
             <span>by</span>
             <span className="font-semibold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">
