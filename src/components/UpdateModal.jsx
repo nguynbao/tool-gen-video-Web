@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Download, CheckCircle, AlertCircle, X, RefreshCw, ExternalLink, ArrowRight } from 'lucide-react';
-import { applyInAppUpdate } from '../services/api';
+import { applyInAppUpdate, restartApp } from '../services/api';
 
 export default function UpdateModal({ isOpen, onClose, updateInfo, onUpdateSuccess }) {
   const [updating, setUpdating] = useState(false);
@@ -36,8 +36,14 @@ export default function UpdateModal({ isOpen, onClose, updateInfo, onUpdateSucce
     }
   };
 
-  const handleReloadApp = () => {
-    window.location.reload();
+  const handleReloadApp = async () => {
+    try {
+      setMessage('Đang khởi động lại ứng dụng...');
+      setStatus('downloading');
+      await restartApp();
+    } catch (e) {
+      window.location.reload();
+    }
   };
 
   return (

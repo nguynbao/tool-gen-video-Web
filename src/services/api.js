@@ -118,6 +118,14 @@ export async function applyInAppUpdate(force = false) {
 }
 
 /**
+ * Khởi động lại ứng dụng Desktop
+ */
+export async function restartApp() {
+  const res = await axios.post(`${API_BASE}/api/v1/system/restart`, {}, { timeout: 5000 });
+  return res.data;
+}
+
+/**
  * Lấy danh sách AI models.
  */
 export async function getAiModels() {
