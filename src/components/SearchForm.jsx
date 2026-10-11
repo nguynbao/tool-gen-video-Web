@@ -25,6 +25,7 @@ import {
 
 import { extractAsinFromUrl } from '../services/api';
 import VisionModelSelector from './VisionModelSelector';
+import AmazonTrendFinder from './AmazonTrendFinder';
 
 const GEMINI_KEY_STORAGE = 'shorts_hunter_gemini_api_key';
 const GEMINI_MODEL_STORAGE = 'shorts_hunter_gemini_model';
@@ -162,6 +163,21 @@ export default function SearchForm({
     const autoAsin = extractAsinFromUrl(val);
     if (setAsin) {
       setAsin(autoAsin);
+    }
+  };
+
+  // Tự động điền khi chọn sản phẩm từ Amazon Trend Finder
+  const handleSelectAmazonProduct = (item) => {
+    if (item.productUrl) {
+      setProductUrl(item.productUrl);
+      const autoAsin = item.asin || extractAsinFromUrl(item.productUrl);
+      if (setAsin) setAsin(autoAsin);
+    }
+    if (item.productName) {
+      setProductName(item.productName);
+    }
+    if (item.category && setCategory) {
+      setCategory(item.category);
     }
   };
 
@@ -347,6 +363,14 @@ export default function SearchForm({
         setVisionPrimaryModel={setVisionPrimaryModel}
         visionSecondaryModel={visionSecondaryModel}
         setVisionSecondaryModel={setVisionSecondaryModel}
+      />
+
+      {/* ═════════════════════════════════════════════════════════════════════ */}
+      {/*  SECTION 1C: KHÁM PHÁ SẢN PHẨM HOT AMAZON (TREND FINDER)             */}
+      {/* ═════════════════════════════════════════════════════════════════════ */}
+      <AmazonTrendFinder
+        onSelectProduct={handleSelectAmazonProduct}
+        geminiApiKey={geminiApiKey}
       />
 
       {/* ═════════════════════════════════════════════════════════════════════ */}

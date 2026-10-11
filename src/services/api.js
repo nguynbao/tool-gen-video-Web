@@ -193,3 +193,36 @@ export async function generateSocialCaptions({
   );
   return res.data;
 }
+
+/**
+ * Lấy danh sách thị trường quốc gia, ngành hàng và loại bảng xếp hạng Amazon
+ */
+export async function getAmazonTrendOptions() {
+  const res = await axios.get(`${API_BASE}/api/v1/amazon/options`);
+  return res.data;
+}
+
+/**
+ * Khám phá sản phẩm Amazon bán chạy / hàng mới / đột biến 24h
+ */
+export async function getAmazonTrendingProducts({
+  country = 'US',
+  category = 'all',
+  rankType = 'bestsellers',
+  limit = 20,
+  geminiApiKey = '',
+}) {
+  const res = await axios.post(
+    `${API_BASE}/api/v1/amazon/trending`,
+    {
+      country,
+      category,
+      rank_type: rankType,
+      limit: Number(limit) || 20,
+      gemini_api_key: geminiApiKey || undefined,
+    },
+    { timeout: 30000 }
+  );
+  return res.data;
+}
+
