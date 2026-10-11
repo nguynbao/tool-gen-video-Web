@@ -112,8 +112,8 @@ export async function checkForUpdates() {
 /**
  * Tải và cập nhật ứng dụng in-app không cần tải lại bộ cài.
  */
-export async function applyInAppUpdate() {
-  const res = await axios.post(`${API_BASE}/api/v1/system/apply-update`, {}, { timeout: 60000 });
+export async function applyInAppUpdate(force = false) {
+  const res = await axios.post(`${API_BASE}/api/v1/system/apply-update${force ? '?force=true' : ''}`, {}, { timeout: 90000 });
   return res.data;
 }
 

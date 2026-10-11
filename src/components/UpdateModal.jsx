@@ -9,13 +9,13 @@ export default function UpdateModal({ isOpen, onClose, updateInfo, onUpdateSucce
 
   if (!isOpen || !updateInfo) return null;
 
-  const handleApplyUpdate = async () => {
+  const handleApplyUpdate = async (force = false) => {
     setUpdating(true);
     setStatus('downloading');
     setMessage('Đang tải và cập nhật các gói mới nhất từ GitHub...');
 
     try {
-      const res = await applyInAppUpdate();
+      const res = await applyInAppUpdate(force);
       if (res.status === 'success') {
         setStatus('success');
         setMessage(res.message || 'Cập nhật thành công!');
@@ -163,12 +163,24 @@ export default function UpdateModal({ isOpen, onClose, updateInfo, onUpdateSucce
                 )}
               </button>
             ) : (
-              <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
-              >
-                Đóng
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleApplyUpdate(true)}
+                  disabled={updating}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 border border-slate-700 disabled:opacity-50"
+                  title="Tải lại và đồng bộ toàn bộ mã nguồn mới nhất từ GitHub"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${updating ? 'animate-spin' : ''}`} />
+                  <span>{updating ? 'Đang đồng bộ...' : 'Đồng Bộ Lại (Force Update)'}</span>
+                </button>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+                >
+                  Đóng
+                </button>
+              </>
             )}
           </div>
         </div>
